@@ -18,27 +18,36 @@
 
 我们将按照以下阶段逐步深入，每一阶段都包含可运行的代码示例。
 
-### 第一阶段：初识 LLM (入门)
-*   **Hello LLM:** 发起你的第一次 Chat Completion 请求，理解基础参数（Temperature, MaxTokens 等）。
-*   **Prompt Engineering:** 面向后端开发者的 Prompt 设计模式：结构化输入与确定性输出。
+### 第一阶段：初识 LLM
 
-### 第二阶段：交互与体验 (工程化基础)
+*   **Hello LLM:** 发起你的第一次 Chat Completion 请求，理解基础参数。
+*   **结构化 Prompt 设计 (The Go Way):** 后端开发不应该手写字符串拼接。我们要像管理模板一样管理 Prompt。
+
+### 第二阶段：交互与体验
+
 *   **流式输出 (SSE):** 像 ChatGPT 一样通过 Server-Sent Events 实现后端流式响应，优化用户感知的响应延迟 (TTFT)。
 
-### 第三阶段：赋予 AI “手脚” (Agent 核心)
+### 第三阶段：赋予 AI “手脚”
+
 *   **Tool Use (Function Calling):** 让 LLM 学会调用你写的 Go 函数。
 *   **ReAct 范式:** 深入理解“推理-行动”循环，让 Agent 具备自主拆解任务并使用工具的能力。
 
-### 第四阶段：知识增强 (RAG 进阶)
+### 第四阶段：知识增强
+
 *   **基础 RAG:** 理解向量数据库，实现简单的“文档检索 + 生成”。
 *   **Agentic RAG:** 当检索本身变成一个工具，让 Agent 自主决定何时去查文档、查什么文档。
 
-### 第五阶段：生态与标准化 (高级)
-*   **MCP (Model Context Protocol) Server:** 开发符合 Anthropic 标准的 MCP Server，让你的后端能力可以被任意 AI 客户端（如 Claude Desktop）直接调用。
+### 第五阶段：上下文工程
 
-### 第六阶段：生产环境保障 (可观测性与优化)
+*   **上下文工程:** 如何用有限的 Token 装载最多的有效信息？降本增效的秘籍——如何优化 Token 使用，实现高效的上下文缓存。
+
+### 第六阶段：生态与标准化
+
+*   **MCP (Model Context Protocol):** 开发符合 Anthropic 标准的 MCP Server，让你的后端能力可以被任意 AI 客户端（如 Claude Desktop）直接调用。
+
+### 第七阶段：生产环境保障
+
 *   **可观测性 (Observability):** 接入 Trace 和 Log，监控 Agent 的推理链路，定位“幻觉”发生的节点。
-*   **上下文工程:** 降本增效的秘籍——如何优化 Token 使用，实现高效的上下文缓存。
 
 ---
 
