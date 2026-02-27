@@ -10,6 +10,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"babyagent/shared"
 )
 
 type RequestMessage struct {
@@ -53,7 +55,7 @@ type OpenAIChatCompletionRequest struct {
 	Stream   bool             `json:"stream"`
 }
 
-func NonStreamingRequestRawHTTP(ctx context.Context, modelConf ModelConfig, query string) {
+func NonStreamingRequestRawHTTP(ctx context.Context, modelConf shared.ModelConfig, query string) {
 	client := http.Client{}
 
 	requestBody := OpenAIChatCompletionRequest{
@@ -101,7 +103,7 @@ func NonStreamingRequestRawHTTP(ctx context.Context, modelConf ModelConfig, quer
 	log.Printf("token usage: %+v", resp.Usage)
 }
 
-func StreamingRequestRawHTTP(ctx context.Context, modelConf ModelConfig, query string) {
+func StreamingRequestRawHTTP(ctx context.Context, modelConf shared.ModelConfig, query string) {
 	client := http.Client{}
 
 	requestBody := OpenAIChatCompletionRequest{

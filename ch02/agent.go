@@ -9,6 +9,7 @@ import (
 	"github.com/openai/openai-go/v3/option"
 
 	"babyagent/ch02/tool"
+	"babyagent/shared"
 )
 
 type Agent struct {
@@ -19,7 +20,7 @@ type Agent struct {
 	tools        map[tool.AgentTool]tool.Tool
 }
 
-func NewAgent(modelConf ModelConfig, systemPrompt string, tools []tool.Tool) *Agent {
+func NewAgent(modelConf shared.ModelConfig, systemPrompt string, tools []tool.Tool) *Agent {
 	a := Agent{
 		systemPrompt: systemPrompt,
 		model:        modelConf.Model,

@@ -1,4 +1,4 @@
-package ch01
+package shared
 
 import "os"
 

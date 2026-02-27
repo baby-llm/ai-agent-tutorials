@@ -6,9 +6,11 @@ import (
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
+
+	"babyagent/shared"
 )
 
-func NonStreamingRequestSDK(ctx context.Context, modelConf ModelConfig, query string) {
+func NonStreamingRequestSDK(ctx context.Context, modelConf shared.ModelConfig, query string) {
 	client := openai.NewClient(option.WithBaseURL(modelConf.BaseURL), option.WithAPIKey(modelConf.ApiKey))
 
 	req := openai.ChatCompletionNewParams{
@@ -33,7 +35,7 @@ func NonStreamingRequestSDK(ctx context.Context, modelConf ModelConfig, query st
 	log.Printf("token usage: %+v", resp.Usage)
 }
 
-func StreamingRequestSDK(ctx context.Context, modelConf ModelConfig, query string) {
+func StreamingRequestSDK(ctx context.Context, modelConf shared.ModelConfig, query string) {
 	client := openai.NewClient(option.WithBaseURL(modelConf.BaseURL), option.WithAPIKey(modelConf.ApiKey))
 
 	req := openai.ChatCompletionNewParams{

@@ -9,6 +9,7 @@ import (
 
 	"babyagent/ch02"
 	"babyagent/ch02/tool"
+	"babyagent/shared"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	modelConf := ch02.NewModelConfig()
+	modelConf := shared.NewModelConfig()
 
 	agent := ch02.NewAgent(modelConf, ch02.CodingAgentSystemPrompt, []tool.Tool{
 		tool.NewReadTool(),

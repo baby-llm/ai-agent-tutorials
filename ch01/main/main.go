@@ -7,6 +7,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"babyagent/ch01"
+	"babyagent/shared"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	modelConf := ch01.NewModelConfig()
+	modelConf := shared.NewModelConfig()
 
 	switch {
 	case *useRaw && *useStream:
