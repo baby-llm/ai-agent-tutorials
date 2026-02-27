@@ -15,6 +15,7 @@ type Agent struct {
 	systemPrompt string
 	model        string
 	client       openai.Client
+	messages     []openai.ChatCompletionMessageParamUnion
 	tools        map[tool.AgentTool]tool.Tool
 }
 
@@ -24,10 +25,12 @@ func NewAgent(modelConf ModelConfig, systemPrompt string, tools []tool.Tool) *Ag
 		model:        modelConf.Model,
 		client:       openai.NewClient(option.WithBaseURL(modelConf.BaseURL), option.WithAPIKey(modelConf.ApiKey)),
 		tools:        make(map[tool.AgentTool]tool.Tool),
+		messages:     make([]openai.ChatCompletionMessageParamUnion, 0),
 	}
 	for _, t := range tools {
 		a.tools[t.ToolName()] = t
 	}
+	a.messages = append(a.messages, openai.SystemMessage(systemPrompt))
 	return &a
 }
 
@@ -39,16 +42,15 @@ func (a *Agent) execute(ctx context.Context, toolName string, argumentsInJSON st
 	return t.Execute(ctx, argumentsInJSON)
 }
 
+// Run 提供对于单次用户请求 query 的 tool loop，返回本轮结果的输出。Run 会保持当前对话历史，不同主题的对话轮次应该初始化多个 Agent 实例运行。
 func (a *Agent) Run(ctx context.Context, query string) (string, error) {
-
-	messages := make([]openai.ChatCompletionMessageParamUnion, 0)
-	messages = append(messages, openai.SystemMessage(a.systemPrompt), openai.UserMessage(query))
+	a.messages = append(a.messages, openai.UserMessage(query))
 
 	var result string
 	for {
 		params := openai.ChatCompletionNewParams{
 			Model:    a.model,
-			Messages: messages,
+			Messages: a.messages,
 			Tools:    make([]openai.ChatCompletionToolUnionParam, 0),
 		}
 
@@ -75,7 +77,7 @@ func (a *Agent) Run(ctx context.Context, query string) (string, error) {
 		}
 
 		// 拼接 assistant message 到整体消息链中
-		messages = append(messages, message.ToParam())
+		a.messages = append(a.messages, message.ToParam())
 
 		for _, toolCall := range message.ToolCalls {
 			toolResult, err := a.execute(ctx, toolCall.Function.Name, toolCall.Function.Arguments)
@@ -84,7 +86,7 @@ func (a *Agent) Run(ctx context.Context, query string) (string, error) {
 			}
 			log.Printf("tool call %s, arguments %s, error: %v", toolCall.Function.Name, toolCall.Function.Arguments, err)
 			// 返回 tool message 到整体消息链中
-			messages = append(messages, openai.ToolMessage(toolResult, toolCall.ID))
+			a.messages = append(a.messages, openai.ToolMessage(toolResult, toolCall.ID))
 		}
 
 	}
