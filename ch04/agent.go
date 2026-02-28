@@ -9,7 +9,7 @@ import (
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 
-	"babyagent/ch03/tool"
+	"babyagent/ch04/tool"
 	"babyagent/shared"
 )
 
@@ -18,36 +18,58 @@ type Agent struct {
 	model        string
 	client       openai.Client
 	messages     []openai.ChatCompletionMessageParamUnion
-	tools        map[tool.AgentTool]tool.Tool
+	nativeTools  map[tool.AgentTool]tool.Tool // agent 框架中原生实现的 tools
+	mcpClients   map[string]*McpClient        // 集成 mcp 工具
 }
 
-func NewAgent(modelConf shared.ModelConfig, systemPrompt string, tools []tool.Tool) *Agent {
+func NewAgent(modelConf shared.ModelConfig, systemPrompt string, tools []tool.Tool, mcpClients []*McpClient) *Agent {
 	a := Agent{
 		systemPrompt: systemPrompt,
 		model:        modelConf.Model,
 		client:       openai.NewClient(option.WithBaseURL(modelConf.BaseURL), option.WithAPIKey(modelConf.ApiKey)),
-		tools:        make(map[tool.AgentTool]tool.Tool),
+		nativeTools:  make(map[tool.AgentTool]tool.Tool),
+		mcpClients:   make(map[string]*McpClient),
 		messages:     make([]openai.ChatCompletionMessageParamUnion, 0),
 	}
 	for _, t := range tools {
-		a.tools[t.ToolName()] = t
+		a.nativeTools[t.ToolName()] = t
+	}
+	for _, mcpClient := range mcpClients {
+		a.mcpClients[mcpClient.Name()] = mcpClient
 	}
 	a.messages = append(a.messages, openai.SystemMessage(systemPrompt))
 	return &a
 }
 
 func (a *Agent) execute(ctx context.Context, toolName string, argumentsInJSON string) (string, error) {
-	t, ok := a.tools[toolName]
+	// 判断 native tool
+	t, ok := a.nativeTools[toolName]
 	if ok {
 		return t.Execute(ctx, argumentsInJSON)
+	}
+	// 判断 MCP Tool
+	for _, mcpClient := range a.mcpClients {
+		for _, t := range mcpClient.GetTools() {
+			if t.ToolName() != toolName {
+				continue
+			}
+			return t.Execute(ctx, argumentsInJSON)
+		}
 	}
 	return "", errors.New("tool not found")
 }
 
 func (a *Agent) buildTools() []openai.ChatCompletionToolUnionParam {
 	tools := make([]openai.ChatCompletionToolUnionParam, 0)
-	for _, t := range a.tools {
+	// 集成 mcp tools
+	for _, t := range a.nativeTools {
 		tools = append(tools, t.Info())
+	}
+	// 集成 mcp tools
+	for _, mcpClient := range a.mcpClients {
+		for _, t := range mcpClient.GetTools() {
+			tools = append(tools, t.Info())
+		}
 	}
 	return tools
 }

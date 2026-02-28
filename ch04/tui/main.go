@@ -13,8 +13,8 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/joho/godotenv"
 
-	"babyagent/ch03"
-	"babyagent/ch03/tool"
+	"babyagent/ch04"
+	"babyagent/ch04/tool"
 	"babyagent/shared"
 )
 
@@ -503,12 +503,28 @@ func (m *model) View() tea.View {
 func main() {
 	_ = godotenv.Load()
 
+	ctx := context.Background()
 	modelConf := shared.NewModelConfig()
+
+	mcpServerMap, err := shared.LoadMcpServerConfig("mcp-server.json")
+	if err != nil {
+		log.Printf("Failed to load MCP server configuration: %v", err)
+	}
+	mcpClients := make([]*ch03.McpClient, 0)
+	for k, v := range mcpServerMap {
+		mcpClient := ch03.NewMcpToolProvider(k, v)
+		if err := mcpClient.RefreshTools(ctx); err != nil {
+			log.Printf("Failed to refresh tools for MCP server %s: %v", k, err)
+			continue
+		}
+		mcpClients = append(mcpClients, mcpClient)
+	}
 
 	agent := ch03.NewAgent(
 		modelConf,
 		ch03.CodingAgentSystemPrompt,
 		[]tool.Tool{tool.NewBashTool()},
+		mcpClients,
 	)
 
 	log.SetOutput(io.Discard)

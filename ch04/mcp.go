@@ -13,7 +13,7 @@ import (
 	"github.com/openai/openai-go/v3"
 	shared2 "github.com/openai/openai-go/v3/shared"
 
-	"babyagent/ch03/tool"
+	"babyagent/ch04/tool"
 	"babyagent/shared"
 )
 
