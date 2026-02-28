@@ -54,7 +54,7 @@ func (e *McpClient) Name() string {
 
 func (e *McpClient) connect(ctx context.Context) error {
 	// 服务联通，不需要再初始化
-	if e.session.Ping(ctx, &mcp.PingParams{}) == nil {
+	if e.session != nil && e.session.Ping(ctx, &mcp.PingParams{}) == nil {
 		return nil
 	}
 	var err error
