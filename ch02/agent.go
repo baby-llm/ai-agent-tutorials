@@ -70,15 +70,14 @@ func (a *Agent) Run(ctx context.Context, query string) (string, error) {
 			return "", nil
 		}
 		message := resp.Choices[0].Message
+		// 拼接 assistant message 到整体消息链中
+		a.messages = append(a.messages, message.ToParam())
 
 		// tool loop 结束，可以返回结果
 		if len(message.ToolCalls) == 0 {
 			result = message.Content
 			break
 		}
-
-		// 拼接 assistant message 到整体消息链中
-		a.messages = append(a.messages, message.ToParam())
 
 		for _, toolCall := range message.ToolCalls {
 			toolResult, err := a.execute(ctx, toolCall.Function.Name, toolCall.Function.Arguments)
