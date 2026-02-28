@@ -19,7 +19,7 @@ import (
 )
 
 type streamMsg struct {
-	event ch03.MessageVO
+	event ch04.MessageVO
 }
 
 type streamClosedMsg struct{}
@@ -37,7 +37,7 @@ const (
 )
 
 type activeStream struct {
-	events <-chan ch03.MessageVO
+	events <-chan ch04.MessageVO
 	cancel context.CancelFunc
 
 	turnSnapshot int
@@ -48,7 +48,7 @@ type activeStream struct {
 
 type model struct {
 	modelName string
-	agent     *ch03.Agent
+	agent     *ch04.Agent
 
 	input string
 	logs  []string
@@ -77,7 +77,7 @@ var (
 	contentStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
 )
 
-func newModel(agent *ch03.Agent, modelName string) *model {
+func newModel(agent *ch04.Agent, modelName string) *model {
 	vp := viewport.New()
 	vp.SoftWrap = true
 	vp.MouseWheelEnabled = false
@@ -94,7 +94,7 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
-func waitStreamEvent(ch <-chan ch03.MessageVO) tea.Cmd {
+func waitStreamEvent(ch <-chan ch04.MessageVO) tea.Cmd {
 	return func() tea.Msg {
 		msg, ok := <-ch
 		if !ok {
@@ -209,28 +209,28 @@ func (m *model) handleSubmit() (tea.Model, tea.Cmd) {
 	return m.startNewTurn(query)
 }
 
-func (m *model) handleStreamEvent(event ch03.MessageVO) {
+func (m *model) handleStreamEvent(event ch04.MessageVO) {
 	if m.active == nil || m.state == stateAborting {
 		return
 	}
 
 	switch event.Type {
-	case ch03.MessageTypeReasoning:
+	case ch04.MessageTypeReasoning:
 		if event.ReasoningContent == nil {
 			return
 		}
 		m.appendReasoning(*event.ReasoningContent)
-	case ch03.MessageTypeContent:
+	case ch04.MessageTypeContent:
 		if event.Content == nil || *event.Content == "" {
 			return
 		}
 		m.appendContent(*event.Content)
-	case ch03.MessageTypeToolCall:
+	case ch04.MessageTypeToolCall:
 		if event.ToolCall != nil {
 			m.appendLogBlock("工具调用:", fmt.Sprintf("%s(%s)", event.ToolCall.Name, event.ToolCall.Arguments))
 			m.resetOutputSection()
 		}
-	case ch03.MessageTypeError:
+	case ch04.MessageTypeError:
 		if event.Content != nil {
 			m.appendLogBlock("错误:", *event.Content)
 			m.resetOutputSection()
@@ -308,7 +308,7 @@ func (m *model) startNewTurn(query string) (tea.Model, tea.Cmd) {
 	m.logs = append(m.logs, fmt.Sprintf("第 %d 轮", m.round), "")
 	m.appendLogBlock("你:", query)
 
-	streamC := make(chan ch03.MessageVO, 256)
+	streamC := make(chan ch04.MessageVO, 256)
 	doneC := make(chan error, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	m.active = &activeStream{
@@ -510,9 +510,9 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to load MCP server configuration: %v", err)
 	}
-	mcpClients := make([]*ch03.McpClient, 0)
+	mcpClients := make([]*ch04.McpClient, 0)
 	for k, v := range mcpServerMap {
-		mcpClient := ch03.NewMcpToolProvider(k, v)
+		mcpClient := ch04.NewMcpToolProvider(k, v)
 		if err := mcpClient.RefreshTools(ctx); err != nil {
 			log.Printf("Failed to refresh tools for MCP server %s: %v", k, err)
 			continue
@@ -520,9 +520,9 @@ func main() {
 		mcpClients = append(mcpClients, mcpClient)
 	}
 
-	agent := ch03.NewAgent(
+	agent := ch04.NewAgent(
 		modelConf,
-		ch03.CodingAgentSystemPrompt,
+		ch04.CodingAgentSystemPrompt,
 		[]tool.Tool{tool.NewBashTool()},
 		mcpClients,
 	)

@@ -1,4 +1,4 @@
-package ch03
+package ch04
 
 const (
 	MessageTypeReasoning = "reasoning"
