@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"strings"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -72,6 +73,9 @@ func (a *Agent) RunStreaming(ctx context.Context, query string, viewCh chan Mess
 		log.Printf("calling llm model %s...", a.model)
 		stream := a.client.Chat.Completions.NewStreaming(ctx, params)
 		acc := openai.ChatCompletionAccumulator{}
+
+		var reasoningBuf strings.Builder
+
 		for stream.Next() {
 			chunk := stream.Current()
 			acc.AddChunk(chunk)
@@ -84,7 +88,9 @@ func (a *Agent) RunStreaming(ctx context.Context, query string, viewCh chan Mess
 					log.Printf("parse delta failed, raw=%s, err=%v", deltaRaw.RawJSON(), err)
 					continue
 				}
-				if reasoningContent := delta.ReasoningText(); reasoningContent != "" {
+				reasoningContent := delta.ReasoningText()
+				reasoningBuf.WriteString(reasoningContent)
+				if reasoningContent != "" {
 					viewCh <- MessageVO{
 						Type:             MessageTypeReasoning,
 						ReasoningContent: &reasoningContent,
@@ -112,12 +118,20 @@ func (a *Agent) RunStreaming(ctx context.Context, query string, viewCh chan Mess
 			return nil
 		}
 		message := acc.Choices[0].Message
+		messageParam := message.ToParam()
 		// 拼接 assistant message 到整体消息链中
-		messages = append(messages, message.ToParam())
+		messages = append(messages, messageParam)
 
 		// tool loop 结束，可以返回结果
 		if len(message.ToolCalls) == 0 {
 			break
+		}
+
+		// 若使用了 DeepSeek API 且发生了工具调用，则需将 reasoning_content 回传
+		if reasoningBuf.Len() > 0 {
+			messageParam.OfAssistant.SetExtraFields(map[string]any{
+				"reasoning_content": reasoningBuf.String(),
+			})
 		}
 
 		for _, toolCall := range message.ToolCalls {
